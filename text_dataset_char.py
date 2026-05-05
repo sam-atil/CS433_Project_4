@@ -1,6 +1,6 @@
 '''text_dataset_char.py
 Functions to create, organize, and preprocess a character level text dataset
-YOUR NAMES HERE
+Samuel Atilano and Alex Solano
 CS 443: Bio-inspired Machine Learning
 Project 4: Recurrent Neural Networks
 '''
@@ -37,6 +37,11 @@ class CharLevelDataset:
 
         TODO: Set instance variable for the constructor parameters.
         '''
+        self.file_path = file_path
+        self.pad_char = pad_char
+        self.start_char = start_char
+        self.end_char = end_char
+        self.verbose = verbose
 
         # KEEP THE FOLLOWING PLACEHOLDERS, THESE ALL SHOULD BE SET BY THE process METHOD
         self.corpus = None  # Corpus organized as: list of strs, which each str is an entire movie review
@@ -192,7 +197,8 @@ class CharLevelDataset:
         TODO: Add the end, start, and pad tokens to the vocab.
         '''
         # Corpus is list of strs (each str is review)
-        vocab = sorted(list(set(''.join(corpus))))
+        special_chars =  self.get_end_char() + self.get_start_char() + self.get_pad_char()
+        vocab = sorted(list(set(special_chars.join(corpus))))
 
         return vocab
 
@@ -365,6 +371,10 @@ class CharLevelDataset:
         represented as a str) into reviews that should form the basis for the train and validation sequences.
         '''
         # TODO: use existing methods to compute constructor instance variables you don't see already below
+        self.corpus = self.load(N_reviews) # this is also the corpus
+        self.vocab = self.make_vocabulary(self.get_corpus())
+        self.char2ind_map = self.make_char2ind_mapping(self.get_vocab())
+        self.ind2char_map = self.make_ind2char_mapping(self.get_vocab())
 
         if self.verbose:
             print('Number of unique chars/tokens:', len(self.vocab))
@@ -375,11 +385,17 @@ class CharLevelDataset:
 
         for split in splits:
             # TODO: Make the sequences for training the recurrent net
+            if split == 'train':
+                seqs_x_str, seqs_y_str = self.make_sequences(r_train, seq_len, seq_overlap)
+            elif split == 'val':
+                seqs_x_str, seqs_y_str = self.make_sequences(r_val, seq_len, seq_overlap)
 
             if self.verbose:
                 print(f'Number of {split} sequences:', len(seqs_x_str), 'of length', seq_len)
 
             # TODO: Convert char to int code
+            seqs_x_int = self.convert_str2int(seqs_x_str, self.get_char2ind_map())
+            seqs_y_int = self.convert_str2int(seqs_y_str, self.get_char2ind_map())
 
             if self.verbose:
                 print(f'  {seqs_x_int.shape=} {seqs_y_int.shape=}')
