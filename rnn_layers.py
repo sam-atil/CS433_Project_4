@@ -1,6 +1,6 @@
 '''rnn_layers.py
 New layers specific to the RNN network
-YOUR NAMES HERE
+Samuel Atilano and Alex Solano
 CS 443: Bio-inspired Machine Learning
 Project 4: Recurrent Neural Networks
 '''
@@ -28,6 +28,8 @@ class GRU(layers.Layer):
         TODO: Call the superclass constructor, filling in all relevant information. Assign any additional parameters as
         instance vars as needed.
         '''
+        super().__init__(name, 'tanh', prev_layer_or_block)
+        self.units = units
 
         # Wts and bias placeholders
         # Update gate related wts/bias
@@ -111,7 +113,25 @@ class GRU(layers.Layer):
         4. Use He/Kaiming initialization. See the notes and notebook for refreshers on the gains and the strategy for
         the hidden-to-hidden weights.
         '''
-        pass
+        k_cand = self.get_kaiming_gain() # this is for the cand wts
+
+        stddev = 1 / tf.sqrt(float(input_shape[-1]))
+        stddev_cand = (1 / tf.sqrt(float(input_shape[-1]))) * k_cand
+
+        self.wts_update_i2h = tf.Variable(tf.random.normal([input_shape[-1], self.get_num_units()], stddev=stddev))
+        self.wts_update_h2h = tf.Variable(tf.eye(self.get_num_units(), self.get_num_units()))
+        self.update_b = tf.Variable(tf.zeros([self.get_num_units()]))
+
+        # Reset gate related wts/bias
+        self.wts_reset_i2h = tf.Variable(tf.random.normal([input_shape[-1], self.get_num_units()], stddev=stddev))
+        self.wts_reset_h2h = tf.Variable(tf.eye(self.get_num_units(), self.get_num_units()))
+        self.reset_b = tf.Variable(tf.zeros([self.get_num_units()]))
+
+        # Candidate gate related wts/bias
+        self.wts_cand_i2h = tf.Variable(tf.random.normal([input_shape[-1], self.get_num_units()], stddev=stddev_cand))
+        self.wts_cand_h2h = tf.Variable(tf.eye(self.get_num_units(), self.get_num_units()))
+        self.cand_b = tf.Variable(tf.zeros([self.get_num_units()]))
+        
 
     def get_wts(self):
         '''Return all the weights in the layer in a Python list.

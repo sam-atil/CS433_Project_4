@@ -197,9 +197,9 @@ class CharLevelDataset:
         TODO: Add the end, start, and pad tokens to the vocab.
         '''
         # Corpus is list of strs (each str is review)
-        special_chars =  self.get_end_char() + self.get_start_char() + self.get_pad_char()
-        vocab = sorted(list(set(special_chars.join(corpus))))
-
+        vocab = sorted(list(set(''.join(corpus))))
+        vocab = [self.get_pad_char(), self.get_start_char(), self.get_end_char()] + vocab
+        
         return vocab
 
     def make_char2ind_mapping(self, vocab):
@@ -373,6 +373,7 @@ class CharLevelDataset:
         # TODO: use existing methods to compute constructor instance variables you don't see already below
         self.corpus = self.load(N_reviews) # this is also the corpus
         self.vocab = self.make_vocabulary(self.get_corpus())
+        print(self.get_vocab())
         self.char2ind_map = self.make_char2ind_mapping(self.get_vocab())
         self.ind2char_map = self.make_ind2char_mapping(self.get_vocab())
 

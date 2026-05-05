@@ -252,6 +252,8 @@ class Layer:
         '''
         if self.activation == 'relu':
             return 2.0
+        elif self.activation == 'tanh':
+            return 5.0/3.0
         else:
             return 1.0
 
