@@ -116,7 +116,7 @@ class GRU(layers.Layer):
         k_cand = self.get_kaiming_gain() # this is for the cand wts
 
         stddev = 1 / tf.sqrt(float(input_shape[-1]))
-        stddev_cand = (1 / tf.sqrt(float(input_shape[-1]))) * k_cand
+        stddev_cand = (k_cand / tf.sqrt(float(input_shape[-1])))
 
         self.wts_update_i2h = tf.Variable(tf.random.normal([input_shape[-1], self.get_num_units()], stddev=stddev))
         self.wts_update_h2h = tf.Variable(tf.eye(self.get_num_units(), self.get_num_units()))
@@ -186,7 +186,16 @@ class GRU(layers.Layer):
         if self.wts_update_i2h is None:
             self.init_params(input_shape=x.shape)
 
-        pass
+        # update gate
+        u_net_in = x @ self.wts_update_i2h + state @ self.wts_update_h2h + self.update_b
+
+        # reset gate
+        r_net_in = x @ self.wts_reset_i2h + state @ self.wts_update_h2h + self.reset_b
+
+        # candidate gate
+        z_net_in = x @ self.wts_cand_i2h + self.cand_b
+
+        return u_net_in, r_net_in, z_net_in
 
     def compute_net_activation(self, update_gate_in, reset_gate_in, cand_in, state):
         '''Computes the state and net activation of the GRU Layer for the current time step.
@@ -211,7 +220,17 @@ class GRU(layers.Layer):
         tf.float32 tensor. shape=(B, H).
             The reset gate computed for the current time step.
         '''
-        pass
+        # update gate
+        u_net_act = tf.keras.activations.sigmoid(update_gate_in)
+
+        # reset gate
+        r_net_act = tf.keras.activations.sigmoid(reset_gate_in)
+
+        # candidate gate
+        z_net_act = tf.keras.activations.tanh(cand_in + (r_net_act * state) @ self.wts_cand_h2h)
+        z_state_cand = (1 - u_net_act) * state + u_net_act * z_net_act
+
+        return z_state_cand, u_net_act, r_net_act
 
     def reset_state(self, B):
         '''Returns the reset/default GRU state of 0s for all neurons.
@@ -226,7 +245,7 @@ class GRU(layers.Layer):
         tf.float32 tensor. shape=(B, H).
             The reset/default GRU state of 0s for all neurons.
         '''
-        pass
+        return tf.zeros([B, self.get_num_units()])
 
     def __call__(self, x, mask, state=None):
         '''Do a forward pass thru the GRU layer with mini-batch `x`.
@@ -261,6 +280,25 @@ class GRU(layers.Layer):
         '''
         B, T, H_prev = x.shape
 
+        if state is None:
+            state = self.reset_state(B)
+
+        history = []
+        for t in range(T):
+            current_t = x[:, t, :]
+
+            update_gate_in, reset_gate_in, cand_in = self.compute_net_input(current_t, state)
+            z_state_cand, u_net_act, r_net_act = self.compute_net_activation(update_gate_in, reset_gate_in, cand_in, state)
+            
+            state = z_state_cand
+            history.append(z_state_cand)
+
+        history = tf.stack(history, axis = 1)
+
+        if self.output_shape is None:
+            self.output_shape = list(u_net_act.shape)
+
+        return history
 
     def __str__(self):
         '''This layer's "ToString" method. Feel free to customize if you want to make the layer description fancy,
