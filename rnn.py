@@ -92,7 +92,23 @@ class RNN(network.DeepNetwork):
 
         '''
         if self.loss_name == 'temporal_cross_entropy':
-            pass
+
+            #Flattening variables
+            out_net_act_flat = tf.reshape(out_net_act, [tf.shape(out_net_act)[0] * tf.shape(out_net_act)[1], -1])
+            y_flat = tf.reshape(y, [-1])
+            mask_flat = tf.reshape(mask, [-1])
+
+            #Calculating Log
+            z_netact = arange_index(out_net_act_flat, y_flat)
+            loss = -tf.math.log(z_netact + eps)
+            loss = loss * mask_flat #Applying the mask
+
+            #Getting total number of 1s from mask (excluding the padding tokens)
+            total_ones = tf.reduce_sum(mask_flat)
+            total_sum = tf.reduce_sum(loss)
+            loss = total_sum / (total_ones + eps)
+
+            return loss
         else:
             raise ValueError(f'Unknown loss function {self.loss_name}')
 
@@ -156,7 +172,7 @@ class RNN(network.DeepNetwork):
                     #Latest State at T=-1
                     latest_state = rec_layer_hist[:,-1,:]
                     rec_layer_states.append(latest_state)
-                    
+
                     state_index +=1
             else: #Pass it through layer like normal
                 net_act = self.layers[i](net_act)
