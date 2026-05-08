@@ -1,6 +1,6 @@
 '''rnn.py
 Recurrent neural networks (RNNs) for text generation
-YOUR NAMES HERE
+Samuel Atilano and Alex Solano
 CS 443: Bio-inspired Machine Learning
 Project 4: Recurrent Neural Networks
 '''
@@ -45,6 +45,13 @@ class RNN(network.DeepNetwork):
         # This is intended to be used to determine during the net's forward pass whether recurrent layers should
         # bootstrap off of an existing state, if it is provided.
         self.is_recurrent_layer = []
+
+        super().__init__(input_feats_shape)
+
+        self.pad_token = pad_token
+        self.start_token = start_token
+        self.end_token = end_token
+        self.C = C
 
     def loss(self, out_net_act, y, mask, eps=1e-8):
         '''Computes the temporal cross entropy loss for the current minibatch based on the output layer activations
@@ -128,6 +135,13 @@ class RNN(network.DeepNetwork):
 
         rec_layer_states = []
 
+        net_act = x
+        for i in range(len(self.layers)):
+            if self.is_recurrent_layer[i]:
+                rec_layer_hist = self.layers[i](net_act, mask)
+                rec_layer_states.append(rec_layer_hist)
+            else:
+                net_act = self.layers[i](net_act)
 
         return net_act, tuple(rec_layer_states)
 
@@ -296,8 +310,21 @@ class GRU_RNN1Mini(RNN):
         1. Call the superclass constructor to pass along parameters that `DeepNetwork` has in common.
         2. Build out the network like usual. NOTE: you should populate the self.is_recurrent_layer list.
         '''
-        pass
+        super().__init__(input_feats_shape, C)
 
+        self.layers = []
+
+        embedding_layer = Embedding('Embedding Layer', embedding_dim, prev_layer_or_block=None)
+        self.layers.append(embedding_layer)
+        self.is_recurrent_layer.append(False)
+
+        gru_layer = GRU('GRU Layer', rnn_units, embedding_layer)
+        self.layers.append(gru_layer)
+        self.is_recurrent_layer.append(True)
+
+        self.output_layer = Dense('Output', C, 'softmax', prev_layer_or_block=gru_layer, wt_init='he')
+        self.layers.append(self.output_layer)
+        self.is_recurrent_layer.append(False)
 
 class GRU_RNN1(GRU_RNN1Mini):
     '''Recurrent neural network with a single GRU layer.
