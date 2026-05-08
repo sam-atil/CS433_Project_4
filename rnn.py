@@ -240,9 +240,13 @@ class RNN(network.DeepNetwork):
         # Validation loss
         # compute validation net_act
         out_net_act_val, _ = self(x=x_batch, mask=mask)
+
         # compute validation loss
         loss = self.loss(out_net_act_val, y_batch, mask)
-        acc = tf.constant(0.0)
+
+        # compute accuracy
+        y_pred = self.predict(x_batch, out_net_act_val)
+        acc = self.accuracy(y_batch, y_pred)
         return acc, loss
 
     def generate(self, prompt, length, char2ind_map, ind2char_map, r_seed=0):
@@ -387,7 +391,7 @@ class GRU_RNN1(GRU_RNN1Mini):
         NOTE: This has the same architecture as GRU_RNN1Mini (only number of units different) so you can build this
         with one line of code :)
         '''
-        pass
+        super().__init__(input_feats_shape, C, embedding_dim, rnn_units)
 
 
 class GRU_RNN2(RNN):
