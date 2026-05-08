@@ -200,7 +200,7 @@ class RNN(network.DeepNetwork):
         '''
         # Make mask for padding char: 1 if NOT the padding char, 0 if it IS the padding char
         # mask shape: (B, T) -> (B, T, 1) for compatibility with (B, T, H) in rec layers
-        mask = tf.expand_dims(tf.cast(x_batch != self.pad_int, dtype=tf.float32), axis=-1)
+        mask = tf.expand_dims(tf.cast(x_batch != self.pad_token, dtype=tf.float32), axis=-1)
 
         # Do forward pass with gradients tracked in the tape
         with tf.GradientTape() as tape:
@@ -235,7 +235,7 @@ class RNN(network.DeepNetwork):
         '''
         # Make mask for padding char: 1 if NOT the padding char, 0 if it IS the padding char
         # mask shape: (B, T) -> (B, T, 1) for compatibility with (B, T, H)
-        mask = tf.expand_dims(tf.cast(x_batch != self.pad_int, dtype=tf.float32), axis=-1)
+        mask = tf.expand_dims(tf.cast(x_batch != self.pad_token, dtype=tf.float32), axis=-1)
 
         # Validation loss
         # compute validation net_act
