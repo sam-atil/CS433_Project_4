@@ -289,6 +289,8 @@ class GRU(layers.Layer):
 
             update_gate_in, reset_gate_in, cand_in = self.compute_net_input(current_t, state)
             z_state_cand, u_net_act, r_net_act = self.compute_net_activation(update_gate_in, reset_gate_in, cand_in, state)
+
+            z_state_cand = mask[:, t, :] * z_state_cand + (1 - mask[:, t, :]) * state
             
             state = z_state_cand
             history.append(z_state_cand)
