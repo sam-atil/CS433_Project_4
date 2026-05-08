@@ -136,11 +136,29 @@ class RNN(network.DeepNetwork):
         rec_layer_states = []
 
         net_act = x
+        state_index = 0
         for i in range(len(self.layers)):
-            if self.is_recurrent_layer[i]:
-                rec_layer_hist = self.layers[i](net_act, mask)
-                rec_layer_states.append(rec_layer_hist)
-            else:
+            if self.is_recurrent_layer[i]: #Passing through a GRU layer
+                if states is None:
+                    rec_layer_hist = self.layers[i](net_act, mask)
+                    
+                    #All states
+                    net_act = rec_layer_hist
+
+                    #Latest State at T=-1
+                    latest_state = rec_layer_hist[:,-1,:]
+                    rec_layer_states.append(latest_state)
+                else:
+                    state = states[state_index]
+                    rec_layer_hist = self.layers[i](net_act, mask, state)
+                    net_act = rec_layer_hist
+
+                    #Latest State at T=-1
+                    latest_state = rec_layer_hist[:,-1,:]
+                    rec_layer_states.append(latest_state)
+                    
+                    state_index +=1
+            else: #Pass it through layer like normal
                 net_act = self.layers[i](net_act)
 
         return net_act, tuple(rec_layer_states)

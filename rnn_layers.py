@@ -298,7 +298,7 @@ class GRU(layers.Layer):
         history = tf.stack(history, axis = 1)
 
         if self.output_shape is None:
-            self.output_shape = list(u_net_act.shape)
+            self.output_shape = list(history.shape)
 
         return history
 
