@@ -296,6 +296,35 @@ class Layer:
         self.gn_gain = tf.Variable(tf.ones(self.output_shape[:-1] + [self.get_num_units()]))
         self.gn_bias = tf.Variable(tf.zeros([self.get_num_units(), ]))
         self.b = tf.Variable(0.0, trainable=False)
+        
+    def save_wts(self):
+        '''Load saved weights and bias from disk and replace any existing ones in the layer.
+
+        (This method is provided to you. It should not requre modification.)
+
+        Parameters:
+        -----------
+        file_path: str.
+            File path to the stored wts/bias.
+        '''
+        params = {}
+        params['wts'] = self.wts.numpy()
+        params['b'] = self.b.numpy()
+
+        return params
+
+    def load_wts(self, params):
+        '''Load saved weights and bias from disk and replace any existing ones in the layer.
+
+        (This method is provided to you. It should not requre modification.)
+
+        Parameters:
+        -----------
+        file_path: str.
+            File path to the stored wts/bias.
+        '''
+        self.wts.assign(params['wts'])
+        self.b.assign(params['b'])
 
 class Dense(Layer):
     '''Neural network layer that uses Dense net input.'''
